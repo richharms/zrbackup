@@ -20,6 +20,8 @@ In the same directory, a text file named "backup-hosts" was created containing a
 dns1
 }}}
 
+You may also have an exclude file that's passed to rsync, it should be named "backup-exclude-(host)" (for the host dns1, it would be named "backup-exclude-dns1").
+
 The name of the ZFS pool and the file containing the hosts may be changed by altering the FILESYSTEM and BACKUPHOSTS variables at the beginning of the script.
 
 The user the script is running as must be allowed to connect to each of the hosts, using certificate authentication if you would like to avoid having to supply a password each time it connects.
