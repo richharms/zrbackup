@@ -87,7 +87,7 @@ if ( set -o noclobber; echo "$$" > "$LOCKDIR/$LOCKFILE") 2> /dev/null;
 then
    trap 'rm -f "$LOCKDIR/$LOCKFILE"; exit $?' INT TERM EXIT
    runbackups
-   rm -f "$lockfile"
+   rm -f "$LOCKDIR/$LOCKFILE"
    trap - INT TERM EXIT
 else
    echo "`basename $0`: already running under pid $(cat $LOCKDIR/$LOCKFILE)."
