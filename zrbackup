@@ -9,12 +9,27 @@ LOCKDIR=/var/run
 LOCKFILE=zrbackup.pid
 EXCLUDEBASE=backup-exclude-
 
+# $1 snapshot name
+function snapshotexists {
+  local result=0
+  
+  for SNAPSHOTNAME in $SNAPSHOTS
+  do
+    if [ $SNAPSHOTNAME = $1 ]; then
+      result=1
+      break
+    fi
+  done
+  
+  echo $result
+}
+
 # $1 filesystem
 # $2 backuphost
 # $3 name for ZFS snapshot
 # $4 readable snapshot name
 function createsnapshot {
-  if [ ! -d "/$1/$2/.zfs/snapshot/$3" ]; then
+  if [ $(snapshotexists "$1/$2@$3") -eq 0 ]; then
     echo -n "  Creating '$4' snapshot..."
     rm -f /$1/$2/$4
     zfs snapshot $1/$2@$3
@@ -51,9 +66,9 @@ function runbackups {
         EXCLUDEFROM=/$FILESYSTEM/$EXCLUDEBASE$BACKUPHOST
         set +o errexit
         if [ -f "$EXCLUDEFROM" ]; then
-          rsync -avx -e "ssh -c blowfish" --delete --exclude-from $EXCLUDEFROM $BACKUPHOST:$MOUNTPOINT /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR > /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR-rsync.log
+          rsync -avx -e "ssh -c blowfish" --delete --exclude-from $EXCLUDEFROM $BACKUPHOST:$MOUNTPOINT /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR > /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR-rsync
         else
-          rsync -avx -e "ssh -c blowfish" --delete $BACKUPHOST:$MOUNTPOINT /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR > /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR-rsync.log
+          rsync -avx -e "ssh -c blowfish" --delete $BACKUPHOST:$MOUNTPOINT /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR > /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR-rsync
         fi
         RETVAL=$?
         [ $RETVAL -ne 0 -a $RETVAL -ne 24 ] && exit $RETVAL
@@ -61,7 +76,7 @@ function runbackups {
       fi
     done
   
-    date > /$FILESYSTEM/$BACKUPHOST/mountpoints/last-backup.txt
+    date > /$FILESYSTEM/$BACKUPHOST/mountpoints/last-backup
   
     echo -n "  Creating 'Latest' snapshot..."
     LATEST=`date +"%Y%m%d-%H%M%S"`
@@ -70,6 +85,7 @@ function runbackups {
     ln -s /$FILESYSTEM/$BACKUPHOST/.zfs/snapshot/$LATEST/mountpoints /$FILESYSTEM/$BACKUPHOST/Latest 
     echo " done."
   
+    SNAPSHOTS=$(zfs list -H -o name -t snapshot | grep "^$FILESYSTEM/$BACKUPHOST")
     createsnapshot $FILESYSTEM $BACKUPHOST `date +"%Y"` FirstOfTheYear
     createsnapshot $FILESYSTEM $BACKUPHOST `date +"%Y%m"` FirstOfTheMonth
     createsnapshot $FILESYSTEM $BACKUPHOST `date +"%Y%m%d"` FirstOfTheDay
