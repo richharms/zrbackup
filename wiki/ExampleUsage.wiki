@@ -2,6 +2,8 @@
 
 = Example Usage =
 
+*WARNING: This script creates ZFS filesystems, snapshots, and runs rsync with the "--delete" option. TEST IT CAREFULLY BEFORE USING IT.*
+
 On the OpenSolaris machine, a ZFS pool named "backup1a" was created and mounted at "/backup1a."
 
 {{{
