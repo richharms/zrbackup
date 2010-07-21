@@ -28,6 +28,20 @@ The name of the ZFS pool and the file containing the hosts may be changed by alt
 
 The user the script is running as must be allowed to connect to each of the hosts, using certificate authentication if you would like to avoid having to supply a password each time it connects.
 
+{{{
+[root@backup1 backup1a]# ./zrbackup
+Backing up host: dns1
+  Creating filesystem for host.
+  Mountpoint: /
+    Creating directory for mountpoint.
+  Mountpoint: /boot
+    Creating directory for mountpoint.
+  Creating 'Latest' snapshot... done.
+  Creating 'FirstOfTheYear' snapshot... done.
+  Creating 'FirstOfTheMonth' snapshot... done.
+  Creating 'FirstOfTheDay' snapshot... done.
+}}}
+
 After executing for the first time, a new zfs volume will be created:
 
 {{{
