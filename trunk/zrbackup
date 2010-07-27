@@ -9,6 +9,21 @@ LOCKDIR=/var/run
 LOCKFILE=zrbackup.pid
 EXCLUDEBASE=backup-exclude-
 
+# Count (+ 1) of the number of snapshots of each type to keep.
+KEEPYEARLY=3
+KEEPMONTHLY=7
+KEEPDAILY=31
+KEEPLATEST=4
+
+# $1 filesystem
+# $2 backuphost
+function trimsnapshots {
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9]$ | tail +$KEEPYEARLY | xargs -l zfs destroy
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9]$ | tail +$KEEPMONTHLY | xargs -l zfs destroy
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$ | tail +$KEEPDAILY | xargs -l zfs destroy
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]$ | tail +$KEEPLATEST | xargs -l zfs destroy
+}
+
 # $1 snapshot name
 function snapshotexists {
   local result=0
@@ -89,6 +104,8 @@ function runbackups {
     createsnapshot $FILESYSTEM $BACKUPHOST `date +"%Y"` FirstOfTheYear
     createsnapshot $FILESYSTEM $BACKUPHOST `date +"%Y%m"` FirstOfTheMonth
     createsnapshot $FILESYSTEM $BACKUPHOST `date +"%Y%m%d"` FirstOfTheDay
+    
+    trimsnapshots $FILESYSTEM $BACKUPHOST
     
   done
 }
