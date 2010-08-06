@@ -71,6 +71,10 @@ drwxr-xr-x 22 root root   27 2010-07-15 14:29 root
 -rw-r--r--  1 root root 3491 2010-07-21 06:23 root-rsync.log
 }}}
 
-Currently there is no pruning of old snapshots.
+Old snapshots are pruned according to the values in the hostdefaults function, optionally overridden per-host in a file named $HOST-settings.
 
-zfs-fuse on Linux is not supported due to it not making the .zfs directory available. It should be possible to handle it conditionally and just leave out the symbolic links.
+At the beginning of its execution, zrbackup looks for a file named zrbackup-preflight and will execute it if it exists and is marked as executable. At the end of execution, it will look for and execute zrbackup-postflight.
+
+Similar scripts are available for each individual host, and should be named $HOST-preflight and $host-postflight. In our case, we use these to shutdown and restart a MySQL slave server in order to get a consistent backup of the InnoDB logs and data files.
+
+This script has been tested with zfs-fuse on Linux, and  works with the exception of the symbolic links that point to the snapshots in the .zfs directory.
