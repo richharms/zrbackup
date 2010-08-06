@@ -10,10 +10,29 @@ LOCKFILE=zrbackup.pid
 EXCLUDEBASE=backup-exclude-
 
 # Count (+ 1) of the number of snapshots of each type to keep.
-KEEPYEARLY=3
-KEEPMONTHLY=7
-KEEPDAILY=31
-KEEPLATEST=4
+# $1 filesystem
+# $2 backuphost
+function hostdefaults {
+  KEEPYEARLY=3
+  KEEPMONTHLY=7
+  KEEPDAILY=31
+  KEEPLATEST=4
+
+  if [ -f "/$1/$2-settings" ]; then
+    echo "  Overriding defaults for host."
+    source /$1/$2-settings
+  fi
+}
+
+# $1 indent
+# $2 filesystem
+# $3 script to execute, if exists
+function runifexists {
+  if [ -x "/$2/$3" ]; then
+    echo "$1Executing: $3"
+    /$2/$3
+  fi
+}
 
 # $1 filesystem
 # $2 backuphost
@@ -54,9 +73,13 @@ function createsnapshot {
 }
 
 function runbackups {
+  runifexists "" $FILESYSTEM zrbackup-preflight
   for BACKUPHOST in $(cat /$FILESYSTEM/$BACKUPHOSTS)
   do
     echo "Backing up host:" $BACKUPHOST
+    hostdefaults $FILESYSTEM $BACKUPHOST
+    runifexists "  " $FILESYSTEM $BACKUPHOST-preflight
+
     if [ ! -d "/$FILESYSTEM/$BACKUPHOST" ]; then
       echo "  Creating filesystem for host."
       zfs create $FILESYSTEM/$BACKUPHOST
@@ -107,7 +130,9 @@ function runbackups {
     
     trimsnapshots $FILESYSTEM $BACKUPHOST
     
+    runifexists "  " $FILESYSTEM $BACKUPHOST-postflight
   done
+  runifexists "" $FILESYSTEM zrbackup-postflight
 }
 
 if [ ! -d $LOCKDIR ]; then
