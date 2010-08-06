@@ -37,10 +37,10 @@ function runifexists {
 # $1 filesystem
 # $2 backuphost
 function trimsnapshots {
-  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9]$ | tail +$KEEPYEARLY | xargs -l zfs destroy
-  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9]$ | tail +$KEEPMONTHLY | xargs -l zfs destroy
-  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$ | tail +$KEEPDAILY | xargs -l zfs destroy
-  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]$ | tail +$KEEPLATEST | xargs -l zfs destroy
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9]$ | tail -n +$KEEPYEARLY | xargs -r -l zfs destroy
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9]$ | tail -n +$KEEPMONTHLY | xargs -r -l zfs destroy
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$ | tail -n +$KEEPDAILY | xargs -r -l zfs destroy
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]$ | tail -r -n +$KEEPLATEST | xargs -l zfs destroy
 }
 
 # $1 snapshot name
