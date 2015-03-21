@@ -1,0 +1,78 @@
+# Example Usage #
+
+**WARNING: This script creates ZFS filesystems, snapshots, and runs rsync with the "--delete" option. REVIEW IT AND TEST IT THOROUGHLY BEFORE USING IT ON ANY PRODUCTION SYSTEMS.**
+
+On the OpenSolaris machine, a ZFS pool named "backup1a" was created and mounted at "/backup1a."
+
+```
+NAME       SIZE  ALLOC   FREE    CAP  DEDUP  HEALTH  ALTROOT
+backup1a  36.2T  10.3T  25.9T    28%  1.02x  ONLINE  -
+
+NAME                      USED  AVAIL  REFER  MOUNTPOINT
+backup1a                 9.28T  22.7T  6.76T  /backup1a
+```
+
+A copy of the zrbackup script was placed at "/backup1a/zrbackup."
+
+In the same directory, a text file named "backup-hosts" was created containing a list of hosts, one per line, that will be included when the script is executed.
+
+```
+dns1
+```
+
+You may also have an exclude file that's passed to rsync, it should be named "backup-exclude-(host)" (for the host dns1, it would be named "backup-exclude-dns1").
+
+The name of the ZFS pool and the file containing the hosts may be changed by altering the FILESYSTEM and BACKUPHOSTS variables at the beginning of the script.
+
+The user the script is running as must be allowed to connect to each of the hosts, using certificate authentication if you would like to avoid having to supply a password each time it connects.
+
+```
+[root@backup1 backup1a]# ./zrbackup
+Backing up host: dns1
+  Creating filesystem for host.
+  Mountpoint: /
+    Creating directory for mountpoint.
+  Mountpoint: /boot
+    Creating directory for mountpoint.
+  Creating 'Latest' snapshot... done.
+  Creating 'FirstOfTheYear' snapshot... done.
+  Creating 'FirstOfTheMonth' snapshot... done.
+  Creating 'FirstOfTheDay' snapshot... done.
+```
+
+After executing for the first time, a new zfs volume will be created:
+
+```
+NAME                      USED  AVAIL  REFER  MOUNTPOINT
+backup1a                 9.28T  22.7T  6.76T  /backup1a
+backup1a/dns1            1.73G  22.7T  1.72G  /backup1a/dns1
+```
+
+In that volume, you'll find a number of symbolic links and a directory for each of mountpoints on the targetted host:
+
+```
+
+lrwxrwxrwx  1 root root 49 2010-07-21 06:23 FirstOfTheDay -> /backup1a/dns1/.zfs/snapshot/20100721/mountpoints
+lrwxrwxrwx  1 root root 47 2010-07-20 09:36 FirstOfTheMonth -> /backup1a/dns1/.zfs/snapshot/201007/mountpoints
+lrwxrwxrwx  1 root root 45 2010-07-20 09:36 FirstOfTheYear -> /backup1a/dns1/.zfs/snapshot/2010/mountpoints
+lrwxrwxrwx  1 root root 56 2010-07-21 06:23 Latest -> /backup1a/dns1/.zfs/snapshot/20100721-062351/mountpoints
+drwxr-xr-x  4 root root  7 2010-07-20 09:36 mountpoints
+```
+
+Inside the mountpoints directory, will be one directory for each of the mounted ext3 filesystems on the targetted host, along with a log of the output of the last rsync command, and a file containing the last date/time of the backup:
+
+```
+drwxr-xr-x  3 root root    3 2010-07-20 09:36 boot
+-rw-r--r--  1 root root  127 2010-07-21 06:23 boot-rsync.log
+-rw-r--r--  1 root root   41 2010-07-21 06:23 last-backup.txt
+drwxr-xr-x 22 root root   27 2010-07-15 14:29 root
+-rw-r--r--  1 root root 3491 2010-07-21 06:23 root-rsync.log
+```
+
+Old snapshots are pruned according to the values in the hostdefaults function, optionally overridden per-host in a file named $HOST-settings.
+
+At the beginning of its execution, zrbackup looks for a file named zrbackup-preflight and will execute it if it exists and is marked as executable. At the end of execution, it will look for and execute zrbackup-postflight.
+
+Similar scripts are available for each individual host, and should be named $HOST-preflight and $host-postflight. In our case, we use these to shutdown and restart a MySQL slave server in order to get a consistent backup of the InnoDB logs and data files.
+
+This script has been tested with zfs-fuse on Linux, and  works with the exception of the symbolic links that point to the snapshots in the .zfs directory.
