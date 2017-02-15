@@ -104,9 +104,9 @@ function runbackups {
         EXCLUDEFROM=/$FILESYSTEM/$EXCLUDEBASE$BACKUPHOST
         set +o errexit
         if [ -f "$EXCLUDEFROM" ]; then
-          rsync -avx -e "ssh -c blowfish" --numeric-ids --delete --exclude-from $EXCLUDEFROM $BACKUPHOST:$MOUNTPOINT /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR > /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR-rsync
+          rsync -avx -e "ssh" --numeric-ids --delete --exclude-from $EXCLUDEFROM $BACKUPHOST:$MOUNTPOINT /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR > /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR-rsync
         else
-          rsync -avx -e "ssh -c blowfish" --numeric-ids --delete $BACKUPHOST:$MOUNTPOINT /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR > /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR-rsync
+          rsync -avx -e "ssh" --numeric-ids --delete $BACKUPHOST:$MOUNTPOINT /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR > /$FILESYSTEM/$BACKUPHOST/mountpoints/$DESTDIR-rsync
         fi
         RETVAL=$?
         [ $RETVAL -ne 0 -a $RETVAL -ne 24 ] && exit $RETVAL
