@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#   Copyright 2010-17 Richard R. Harms
+#   Copyright 2010-21 Richard R. Harms
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -53,10 +53,10 @@ function runifexists {
 # $1 filesystem
 # $2 backuphost
 function trimsnapshots {
-  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9]$ | tail -n +$KEEPYEARLY | xargs -r -l zfs destroy
-  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9]$ | tail -n +$KEEPMONTHLY | xargs -r -l zfs destroy
-  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$ | tail -n +$KEEPDAILY | xargs -r -l zfs destroy
-  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]$ | tail -r -n +$KEEPLATEST | xargs -l zfs destroy
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9]$ | tail -n +$KEEPYEARLY | xargs -r -L 1 zfs destroy
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9]$ | tail -n +$KEEPMONTHLY | xargs -r -L 1 zfs destroy
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]$ | tail -n +$KEEPDAILY | xargs -r -L 1 zfs destroy
+  zfs get -rHp used $1/$2 | cut -f 1 | sort -r | grep ^$1/$2@[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]$ | tail -n +$KEEPLATEST | xargs -r -L 1 zfs destroy
 }
 
 # $1 snapshot name
@@ -101,7 +101,7 @@ function runbackups {
       zfs create $FILESYSTEM/$BACKUPHOST
     fi
   
-    MOUNTPOINTS=`ssh $BACKUPHOST cat /etc/mtab | grep " ext3 " | cut -f 2 -d ' '`
+    MOUNTPOINTS=`ssh $BACKUPHOST cat /etc/mtab | grep -e " ext[3-4] " -e " xfs " | cut -f 2 -d ' '`
     for MOUNTPOINT in $MOUNTPOINTS
     do
       echo "  Mountpoint:" $MOUNTPOINT
