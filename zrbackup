@@ -25,6 +25,9 @@ LOCKDIR=/var/run
 LOCKFILE=zrbackup.pid
 EXCLUDEBASE=backup-exclude-
 
+# Use GNU versions of commands when possible
+export PATH=/usr/gnu/bin:$PATH
+
 # Count (+ 1) of the number of snapshots of each type to keep.
 # $1 filesystem
 # $2 backuphost
